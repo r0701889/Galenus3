@@ -18,6 +18,7 @@ namespace IDGFileSystemWatcher
     {
 
         static void Main(string[] args)
+
         {
 
 
@@ -83,48 +84,38 @@ namespace IDGFileSystemWatcher
         private static void LeesKFileUit(string BestandNaam)
         {
 
-            bool isheader = true;
+            //initialisatie van mijn variable en mijn folder map
             var reader = new StreamReader(File.OpenRead(@"D:\Users\brecht\Documents\TestmapNET\" + BestandNaam));
-            List<string> headers = new List<string>();
+            string[,] array2Da = new string[2,32];
+            string[,] resultaat = new string[32, 2];
+            int teller = 0;
 
-            var line = reader.ReadLine();
-            var values = line.Split(';');
-            string[,] array2Da = new string[values.Length, 2];
-
+            // hier lees ik mijn .csv bestant per line.
             while (!reader.EndOfStream)
             {
 
+                var line = reader.ReadLine();
+                var values = line.Split(';');
 
-                if (isheader)
+                for (int i = 0; i < 32; i++)
                 {
-                    isheader = false;
-                    headers = values.ToList();
-                }
-                else
-                {
-                    int i = 0;
-                    for (i = 0; i < values.Length; i++)
-                    {
-
-                        array2Da[i, 0] = headers[i];
-                        array2Da[i, 1] = values[i];
-                        //Console.WriteLine(string.Format("{0} = {1};", headers[i], values[i]));
-
-                    }
-                    
-                    for (int w = 0; w < (array2Da.Length / 2); w++)
-                    {
-                        // Console.WriteLine("colom " + w + " :");
-                        for (int d = 0; d < 2; d++)
-                        {
-                            //Console.WriteLine(array2Da[w, d]);
-                        }
-                    }
-
+                    array2Da[teller, i] = values[i];
                 }
 
+                teller++;
             }
 
+            // de variable array2Da is nu nog geordend via rij, in deze code zet ik de header en waarden samen zodat het duidelijker is.
+            for (int i = 0; i < 2; i++)
+            {
+                for (int j = 0; j < 32; j++)
+                {
+                    resultaat[j, i] = array2Da[i, j];
+                }
+            }
+
+            //nu steek ik de array "resultaat" in de database
+            InsertInDatabase(resultaat);
         }
         private static void LeesCFileUit(string BestandNaam)
         {
@@ -135,38 +126,31 @@ namespace IDGFileSystemWatcher
             string[] lines = System.IO.File.ReadAllLines(path);
             string[,] array2Da = new string[lines.Length, 14];
 
-            int plaats = 0;
-            int invulplaats = 0;
+            int teller = 0;
 
-            foreach (string line in lines)
+            // hier lees ik mijn .csv bestant per line.
+            while (!reader.EndOfStream)
             {
-                string[] columns = line.Split(';');
 
-                foreach (string column in columns)
+                var line = reader.ReadLine();
+                var values = line.Split(';');
+
+                for (int i = 0; i < 14; i++)
                 {
-                    array2Da[plaats, invulplaats] = column;
-                    invulplaats++;
+                    array2Da[teller, i] = values[i];
                 }
-                invulplaats = 0;
-                plaats++;
+
+                teller++;
             }
 
-            for (int w = 0; w < (lines.Length / 2); w++)
-            {
-                Console.WriteLine("colom " + w + " :");
-                for (int d = 0; d < 14; d++)
-                {
-                    Console.WriteLine(array2Da[w, d]);
-                }
-            }
-
+           
         }
 
         private static void InsertInDatabase(string[,] array2Da)
         {
 
             string connetionString = null;
-            connetionString = "Data Source=192.168.0.211; Initial Catalog=Galenus;User ID=brecht1;Password=brecht1";
+            connetionString = "Data Source=192.168.0.215; Initial Catalog=Galenus;User ID=brecht1;Password=brecht1";
 
             MySqlCommand command;
             MySqlDataAdapter adapter = new MySqlDataAdapter();
@@ -178,7 +162,7 @@ namespace IDGFileSystemWatcher
             conn.Open();
             Console.WriteLine("Connection Open !");
 
-            sql = "INSERT INTO Run_info_galenus (`N° machine`,`N° cyclus`,`Gebruiker`,`Start_cyclus`,`Stop_cyclus`,`Status programma`,`N° programma`,`Naam programma`,`duurtijd cyclus`,`Duur sterilisatie`,`Min temp.`,`Max temp`,`Machine_naam`) VALUES ('" + array2Da[0, 1] + "', '" + array2Da[1, 1] + "', '" + array2Da[2, 1] + "', '" + array2Da[3, 1] + "', '" + array2Da[4, 1] + "', '0-Cycle terminé correctement','420','Test vide EN285','1230', '0','1', '0', 'Autoclave 1')";
+            sql = "INSERT INTO `Run_info_galenus` (`N° machine`, `N° cyclus`, `Gebruiker`, `Start_cyclus`, `Stop_cyclus`, `Status programma`, `N° programma`, `Naam programma`, `duurtijd cyclus`, `Duur sterilisatie`, `Min temp`, `Max temp`, `Machine_naam`)  VALUES ('" + array2Da[0, 1] + "', '" + array2Da[1, 1] + "', '" + array2Da[2, 1] + "', '" + array2Da[3, 1] + "', '" + array2Da[4, 1] + "', '" + array2Da[5, 1] + "', '" + array2Da[6, 1] + "', '" + array2Da[7, 1] + "', '" + array2Da[10, 1] + "', '" + array2Da[11, 1] + "', '" + array2Da[12, 1] + "', '" + array2Da[13, 1] + "', '" + array2Da[27, 1] + "')";
 
             command = new MySqlCommand(sql, conn);
             adapter.InsertCommand = new MySqlCommand(sql, conn);
