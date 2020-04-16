@@ -1,34 +1,116 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Data.SqlClient;
+using System.Configuration;
 using System.IO;
-using System.Linq;
-using MySql.Data;
 using MySql.Data.MySqlClient;
-using System.Net.NetworkInformation;
+using ConsoleAppBelimed.JULIETClasses;
 
-
-
-namespace IDGFileSystemWatcher
+namespace ConsoleAppBelimed
 
 {
-
     class Program
-
     {
+        private static string SourceFolder { get; set; }
+        private static string ArchiveFolder { get; set; }
+        private static bool ArchiveFile { get; set; }
 
-        static void Main(string[] args)
+        private const string FileFilter = "K*.csv";
 
+        static void Main()
         {
+            if (ConfigureApplication())
+            {
+                using (FileSystemWatcher watcher = new FileSystemWatcher())
+                {
+                    // Set properties of watcher
+                    watcher.Path = SourceFolder;
+                    watcher.Filter = FileFilter;
+                    watcher.IncludeSubdirectories = true;
 
+                    // Set eventhandler of watcher
+                    watcher.Created += new FileSystemEventHandler(Oncreated);
+                    watcher.EnableRaisingEvents = true;
 
-            string path = @"D:\Users\brecht\Documents\TestmapNET";
-
-            MonitorDirectory(path);
-
-            Console.ReadKey();
-
+                    // Enable the user to quit the program
+                    Console.WriteLine("Monitoring: " + SourceFolder);
+                    Console.WriteLine("Press 'q' to quit the application.");
+                    while (Console.Read() != 'q') ;
+                }
+            }
+            else
+            {
+                Console.WriteLine("Press any key to quit the application.");
+                Console.Read();
+            }
         }
+
+        private static void Oncreated(object sender, FileSystemEventArgs e)
+        {
+            Console.WriteLine("New file detected: " + e.Name);
+            JuMachineDataBelimed machineDataBelimed = new JuMachineDataBelimed(-1);
+            if (machineDataBelimed.LoadFromFile(e.FullPath))
+            {
+                Console.WriteLine(e.Name + " was parsed.");
+            }
+            else
+            {
+                Console.WriteLine(e.Name + " could not be parsed.");
+            }
+            // TODO: save machineDataBelimed to the database.
+            // This function should then query the database to get the MDNDX.
+            // This MDNDX is required to also save the lists MachineSensors and MachineSensorValues to the database, 
+            // since the MDNDX is the link (foreign key) between machineDataBelimed and MachineSensors and MachineSensorValues
+
+            if (ArchiveFile)
+            {
+                if (!MoveFileToArchive(e.FullPath))
+                {
+                    Console.WriteLine(e.Name + " was archived.");
+                }
+                else
+                {
+                    Console.WriteLine(e.Name + " could not be archived.");
+                }
+            }
+        }
+
+        private static bool MoveFileToArchive(string aFileFullPath)
+        {
+            if (!File.Exists(aFileFullPath)) { return false; }
+
+            // TODO: write function
+            return true;
+        }
+
+        private static bool ConfigureApplication()
+        {
+            try
+            {
+                SourceFolder = ConfigurationManager.AppSettings.Get("SourceFolder");
+                if (!Directory.Exists(SourceFolder))
+                {
+                    Console.WriteLine(SourceFolder + " does not exists.");
+                    return false;
+                }
+                ArchiveFolder = ConfigurationManager.AppSettings.Get("ArchiveFolder");
+                if (ArchiveFile && (!Directory.Exists(ArchiveFolder)))
+                {
+                    Console.WriteLine(ArchiveFolder + " does not exists.");
+                    return false;
+                }
+                ArchiveFile = !string.IsNullOrEmpty(ArchiveFolder);
+
+                // TODO: add keys for database access
+
+                return true;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("ConfigureApplication: " + e.Message);
+            }
+            return false;
+        }
+
+
 
         private static void MonitorDirectory(string path)
 
@@ -86,7 +168,7 @@ namespace IDGFileSystemWatcher
 
             //initialisatie van mijn variable en mijn folder map
             var reader = new StreamReader(File.OpenRead(@"D:\Users\brecht\Documents\TestmapNET\" + BestandNaam));
-            string[,] array2Da = new string[2,32];
+            string[,] array2Da = new string[2, 32];
             string[,] resultaat = new string[32, 2];
             int teller = 0;
 
@@ -123,7 +205,7 @@ namespace IDGFileSystemWatcher
             var reader = new StreamReader(File.OpenRead(@"D:\Users\brecht\Documents\TestmapNET\" + BestandNaam));
 
             string path = "D:/Users/brecht/Documents/TestmapNET/" + BestandNaam;
-            string[] lines = System.IO.File.ReadAllLines(path);
+            string[] lines = File.ReadAllLines(path);
             string[,] array2Da = new string[lines.Length, 14];
 
             int teller = 0;
@@ -143,7 +225,7 @@ namespace IDGFileSystemWatcher
                 teller++;
             }
 
-           
+
         }
 
         private static void InsertInDatabase(string[,] array2Da)
@@ -154,7 +236,7 @@ namespace IDGFileSystemWatcher
 
             MySqlCommand command;
             MySqlDataAdapter adapter = new MySqlDataAdapter();
-            String sql = "";
+            string sql = "";
 
             MySqlConnection conn = new MySqlConnection(connetionString);
 
