@@ -52,6 +52,11 @@ namespace ConsoleAppBelimed.Toolbox
             }
         }
 
+        public static string BoolToString(bool aBool)
+        {
+            return aBool ? "T" : "F";
+        }
+
         public static bool StringToCycleResult(string aCycleResultString, out string aCycleResult)
         {
             aCycleResult = "";

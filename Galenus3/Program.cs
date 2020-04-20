@@ -3,6 +3,7 @@ using System.Configuration;
 using System.IO;
 using MySql.Data.MySqlClient;
 using ConsoleAppBelimed.JULIETClasses;
+using ConsoleAppBelimed.Toolbox;
 
 namespace ConsoleAppBelimed
 
@@ -12,6 +13,11 @@ namespace ConsoleAppBelimed
         private static string SourceFolder { get; set; }
         private static string ArchiveFolder { get; set; }
         private static bool ArchiveFile { get; set; }
+        private static string Database { get; set; }
+        private static string Schema { get; set; }
+        private static string Server { get; set; }
+        private static string UserID { get; set; }
+        private static string Password { get; set; }
 
         private const string FileFilter = "K*.csv";
 
@@ -55,10 +61,43 @@ namespace ConsoleAppBelimed
             {
                 Console.WriteLine(e.Name + " could not be parsed.");
             }
-            // TODO: save machineDataBelimed to the database.
-            // This function should then query the database to get the MDNDX.
-            // This MDNDX is required to also save the lists MachineSensors and MachineSensorValues to the database, 
-            // since the MDNDX is the link (foreign key) between machineDataBelimed and MachineSensors and MachineSensorValues
+
+            try
+            {
+                MySqlConnection connection = DBMySql.GetConnection(Database, Server, UserID, Password);
+                if (connection != null)
+                {
+                    if (!DBMySql.Insert(machineDataBelimed, connection, Schema))
+                    {
+                        Console.WriteLine(e.Name + ": MachineData could not be written to database");
+                        return;
+                    }
+                    if (!DBMySql.Select(machineDataBelimed, connection, Schema, out long mdNDX))
+                    {
+                        Console.WriteLine(e.Name + ": MachineData has not a valid MDNDX");
+                        return;
+                    }
+                    foreach (JuMachineSensor machineSensor in machineDataBelimed.MachineSensors)
+                    {
+                        if (!DBMySql.Insert(machineSensor, mdNDX, connection, Schema))
+                        {
+                            Console.WriteLine(e.Name + ": MachineSensor " + machineSensor.SensorID + " could not be written to database");
+                            return;
+                        }
+                    }
+                    // TODO: save MachineSensorValues to database, look at the foreach above as an example
+
+                    connection.Close();
+                }
+                else
+                {
+                    Console.WriteLine("Connection to database failed");
+                }
+            }
+            catch (Exception exc)
+            {
+                Console.WriteLine(e.Name + " database handling error: " + exc.Message);
+            }
 
             if (ArchiveFile)
             {
@@ -98,9 +137,11 @@ namespace ConsoleAppBelimed
                     return false;
                 }
                 ArchiveFile = !string.IsNullOrEmpty(ArchiveFolder);
-
-                // TODO: add keys for database access
-
+                Database = ConfigurationManager.AppSettings.Get("Database");
+                Schema = ConfigurationManager.AppSettings.Get("Schema");
+                Server = ConfigurationManager.AppSettings.Get("Server");
+                UserID = ConfigurationManager.AppSettings.Get("UserID");
+                Password = ConfigurationManager.AppSettings.Get("Password");
                 return true;
             }
             catch (Exception e)
