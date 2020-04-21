@@ -159,6 +159,7 @@ namespace ConsoleAppBelimed.Toolbox
             if (!Regex.IsMatch(aFileName, RegExBelimed))
             {
                 Console.WriteLine("CheckFileNameBelimed: " + aFileName + " file name not has correct format");
+                return false;
             }
             return true;
         }
@@ -173,6 +174,7 @@ namespace ConsoleAppBelimed.Toolbox
             if (!Regex.IsMatch(aFileName, RegExMMM))
             {
                 Console.WriteLine("CheckFileNameMMM: " + aFileName + " file name not has correct format");
+                return false;
             }
             return true;
         }

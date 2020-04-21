@@ -60,6 +60,7 @@ namespace ConsoleAppBelimed
             else
             {
                 Console.WriteLine(e.Name + " could not be parsed.");
+                return;
             }
 
             try
@@ -131,12 +132,12 @@ namespace ConsoleAppBelimed
                     return false;
                 }
                 ArchiveFolder = ConfigurationManager.AppSettings.Get("ArchiveFolder");
+                ArchiveFile = !string.IsNullOrEmpty(ArchiveFolder);
                 if (ArchiveFile && (!Directory.Exists(ArchiveFolder)))
                 {
                     Console.WriteLine(ArchiveFolder + " does not exists.");
                     return false;
                 }
-                ArchiveFile = !string.IsNullOrEmpty(ArchiveFolder);
                 Database = ConfigurationManager.AppSettings.Get("Database");
                 Schema = ConfigurationManager.AppSettings.Get("Schema");
                 Server = ConfigurationManager.AppSettings.Get("Server");
@@ -151,7 +152,7 @@ namespace ConsoleAppBelimed
             return false;
         }
 
-
+        /*
 
         private static void MonitorDirectory(string path)
 
@@ -296,5 +297,7 @@ namespace ConsoleAppBelimed
             conn.Close();
 
         }
+         */
     }
+
 }
