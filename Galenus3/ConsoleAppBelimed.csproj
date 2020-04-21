@@ -63,7 +63,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Toolbox\Conversions.cs" />
-    <Compile Include="Toolbox\DBMySql.cs" />
+    <Compile Include="Toolbox\DBMariaDB.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

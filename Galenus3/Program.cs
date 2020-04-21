@@ -52,43 +52,41 @@ namespace ConsoleAppBelimed
         private static void Oncreated(object sender, FileSystemEventArgs e)
         {
             Console.WriteLine("New file detected: " + e.Name);
-            JuMachineDataBelimed machineDataBelimed = new JuMachineDataBelimed(-1);
-            if (machineDataBelimed.LoadFromFile(e.FullPath))
-            {
-                Console.WriteLine(e.Name + " was parsed.");
-            }
-            else
-            {
-                Console.WriteLine(e.Name + " could not be parsed.");
-                return;
-            }
-
+            MySqlConnection connection = null;
             try
             {
-                MySqlConnection connection = DBMySql.GetConnection(Database, Server, UserID, Password);
+                connection = DBMariaDB.GetConnection(Database, Server, UserID, Password);
                 if (connection != null)
                 {
-                    if (!DBMySql.Insert(machineDataBelimed, connection, Schema))
+                    if (!DBMariaDB.GetMDNDX(connection, Schema, out long mdNDX))
+                    {
+                        Console.WriteLine(e.Name + ": could not get a valid MDNDX");
+                        return;
+                    }
+                    JuMachineDataBelimed machineDataBelimed = new JuMachineDataBelimed(mdNDX);
+                    if (machineDataBelimed.LoadFromFile(e.FullPath))
+                    {
+                        Console.WriteLine(e.Name + " was parsed.");
+                    }
+                    else
+                    {
+                        Console.WriteLine(e.Name + " could not be parsed.");
+                        return;
+                    }
+                    if (!DBMariaDB.Insert(machineDataBelimed, connection, Schema))
                     {
                         Console.WriteLine(e.Name + ": MachineData could not be written to database");
                         return;
                     }
-                    if (!DBMySql.Select(machineDataBelimed, connection, Schema, out long mdNDX))
-                    {
-                        Console.WriteLine(e.Name + ": MachineData has not a valid MDNDX");
-                        return;
-                    }
                     foreach (JuMachineSensor machineSensor in machineDataBelimed.MachineSensors)
                     {
-                        if (!DBMySql.Insert(machineSensor, mdNDX, connection, Schema))
+                        if (!DBMariaDB.Insert(machineSensor, mdNDX, connection, Schema))
                         {
                             Console.WriteLine(e.Name + ": MachineSensor " + machineSensor.SensorID + " could not be written to database");
                             return;
                         }
                     }
                     // TODO: save MachineSensorValues to database, look at the foreach above as an example
-
-                    connection.Close();
                 }
                 else
                 {
@@ -98,6 +96,10 @@ namespace ConsoleAppBelimed
             catch (Exception exc)
             {
                 Console.WriteLine(e.Name + " database handling error: " + exc.Message);
+            }
+            finally
+            {
+                if (connection != null) { connection.Close(); }
             }
 
             if (ArchiveFile)
