@@ -20,28 +20,13 @@ namespace ConsoleAppBelimed.Toolbox
             return connection;
         }
 
-        public static bool GetMDNDX(MySqlConnection aConnection, string aSchema, out long aMDNDX)
-        {
-            aMDNDX = 0;
-            string sql = string.Format("SELECT NEXT VALUE FOR {0}.ORIS_MACHINEDATA_SEQ", aSchema);
-            string mdNDXString = "";
-
-            using (MySqlCommand cmd = new MySqlCommand(sql, aConnection))
-            {
-                mdNDXString = cmd.ExecuteScalar().ToString();
-            }
-            if (string.IsNullOrEmpty(mdNDXString)) { return false; }
-            if (!long.TryParse(mdNDXString, out aMDNDX)) { return false; }
-            return aMDNDX > 0;
-        }
-
         public static bool Insert(JuMachineDataBelimed aMachineDataBelimed, MySqlConnection aConnection, string aSchema)
         {
-            string sql = string.Format("INSERT INTO {0}.ORIS_MACHINEDATABELIMED (MDNDX, MACHINEID, MACHINENAME, PROGRAMREFERENCE, PROGRAMNAME, STARTEDBY, SOFTWAREVERSION, " +
+            string sql = string.Format("INSERT INTO {0}.ORIS_MACHINEDATABELIMED (MACHINEID, MACHINENAME, PROGRAMREFERENCE, PROGRAMNAME, STARTEDBY, SOFTWAREVERSION, " +
                 "LASTBDTEST, LASTBDTESTREFERENCE, LASTVACUUMTEST, LASTVACUUMTESTREFERENCE, CYCLEREFERENCE, CYCLESTARTED, CYCLEENDED, ISCYCLEOK, CYCLERESULT, " +
                 "HOLDTIME, F0VALUE, PROGRAMDATE, CYCLEDURATION, STERILIZATIONTEMPMIN, STERILIZATIONTEMPMAX, LEAKRATE, FUNCTIONALCHECK, " +
                 "CYCLERELEASED, CYCLERELEASEDBY, CYCLERELEASESTATE, BATCHDATA1, BATCHDATA2, BATCHDATA3, TESTRESULT, RIF1, RIF2, RIF3, DTCREATED) " +
-                "VALUES(@MDNDX, @MACHINEID, @MACHINENAME, @PROGRAMREFERENCE, @PROGRAMNAME, @STARTEDBY, @SOFTWAREVERSION, " +
+                "VALUES(@MACHINEID, @MACHINENAME, @PROGRAMREFERENCE, @PROGRAMNAME, @STARTEDBY, @SOFTWAREVERSION, " +
                 "@LASTBDTEST, @LASTBDTESTREFERENCE, @LASTVACUUMTEST, @LASTVACUUMTESTREFERENCE, @CYCLEREFERENCE, @CYCLESTARTED, @CYCLEENDED, @ISCYCLEOK, @CYCLERESULT, " +
                 "@HOLDTIME, @F0VALUE, @PROGRAMDATE, @CYCLEDURATION, @STERILIZATIONTEMPMIN, @STERILIZATIONTEMPMAX, @LEAKRATE, @FUNCTIONALCHECK, " +
                 "@CYCLERELEASED, @CYCLERELEASEDBY, @CYCLERELEASESTATE, @BATCHDATA1, @BATCHDATA2, @BATCHDATA3, @TESTRESULT, @RIF1, @RIF2, @RIF3, @DTCREATED)", aSchema);
@@ -49,7 +34,6 @@ namespace ConsoleAppBelimed.Toolbox
 
             using (MySqlCommand cmd = new MySqlCommand(sql, aConnection))
             {
-                cmd.Parameters.AddWithValue("@MDNDX", aMachineDataBelimed.MDNDX);
                 cmd.Parameters.AddWithValue("@MACHINEID", aMachineDataBelimed.MachineID);
                 cmd.Parameters.AddWithValue("@MACHINENAME", aMachineDataBelimed.MachineName);
                 cmd.Parameters.AddWithValue("@PROGRAMREFERENCE", aMachineDataBelimed.ProgramReference);
@@ -90,15 +74,15 @@ namespace ConsoleAppBelimed.Toolbox
             return rowCount == 1;
         }
 
-        public static bool Insert(JuMachineSensor aMachineSensor, MySqlConnection aConnection, string aSchema)
+        public static bool Insert(JuMachineSensor aMachineSensor, long aMDNDX, MySqlConnection aConnection, string aSchema)
         {
-            string sql = string.Format("INSERT INTO {0}.ORIS_MACHINESENSOR (MSNDX, MDNDX, SENSORID, CAPTION, SENSORTYPE, SENSORUNIT, DTCREATED) " +
-                "VALUES(NEXT VALUE FOR {0}.ORIS_MACHINESENSOR_SEQ, @MDNDX, @SENSORID, @CAPTION, @SENSORTYPE, @SENSORUNIT, @DTCREATED)", aSchema);
+            string sql = string.Format("INSERT INTO {0}.ORIS_MACHINESENSOR (MDNDX, SENSORID, CAPTION, SENSORTYPE, SENSORUNIT, DTCREATED) " +
+                "VALUES(@MDNDX, @SENSORID, @CAPTION, @SENSORTYPE, @SENSORUNIT, @DTCREATED)", aSchema);
             int rowCount = 0;
 
             using (MySqlCommand cmd = new MySqlCommand(sql, aConnection))
             {
-                cmd.Parameters.AddWithValue("@MDNDX", aMachineSensor.MDNDX);
+                cmd.Parameters.AddWithValue("@MDNDX", aMDNDX);
                 cmd.Parameters.AddWithValue("@SENSORID", aMachineSensor.SensorID);
                 cmd.Parameters.AddWithValue("@CAPTION", aMachineSensor.Caption);
                 cmd.Parameters.AddWithValue("@SENSORTYPE", (int)aMachineSensor.SensorType);
@@ -112,9 +96,9 @@ namespace ConsoleAppBelimed.Toolbox
 
         public static bool Insert(JuMachineSensorValue aMachineSensorValue, MySqlConnection aConnection, string aSchema)
         {
-            string sql = string.Format("INSERT INTO {0}.ORIS_MACHINESENSORVALUE (MSVNDX, MDNDX, DTARGUMENT, STAGE, PHASE, MESSAGEREFERENCE, " +
+            string sql = string.Format("INSERT INTO {0}.ORIS_MACHINESENSORVALUE (MDNDX, DTARGUMENT, STAGE, PHASE, MESSAGEREFERENCE, " +
                 "MESSAGE, SENSOR1, SENSOR2, SENSOR3, SENSOR4, SENSOR5, SENSOR6, ZONEREFERENCE, DTCREATED) " +
-                "VALUES(NEXT VALUE FOR {0}.ORIS_MACHINESENSORVALUE_SEQ, @MDNDX, @DTARGUMENT, @STAGE, @PHASE, @MESSAGEREFERENCE, " +
+                "VALUES(@MDNDX, @DTARGUMENT, @STAGE, @PHASE, @MESSAGEREFERENCE, " +
                 "@MESSAGE, @SENSOR1, @SENSOR2, @SENSOR3, @SENSOR4, @SENSOR5, @SENSOR6, @ZONEREFERENCE, @DTCREATED)", aSchema);
             int rowCount = 0;
 
@@ -138,6 +122,30 @@ namespace ConsoleAppBelimed.Toolbox
                 rowCount = cmd.ExecuteNonQuery();
             }
             return rowCount == 1;
+        }
+
+        public static bool Select(JuMachineDataBelimed aMachineDataBelimed, MySqlConnection aConnection, string aSchema, out long aMDNDX)
+        {
+            aMDNDX = 0;
+            string sql = string.Format("SELECT MDNDX FROM {0}.ORIS_MACHINEDATABELIMED WHERE MACHINEID = @MACHINEID AND CYCLEREFERENCE = @CYCLEREFERENCE", aSchema);
+            string mdNDXString = "";
+
+            using (MySqlCommand cmd = new MySqlCommand(sql, aConnection))
+            {
+                cmd.Parameters.AddWithValue("@MACHINEID", aMachineDataBelimed.MachineID);
+                cmd.Parameters.AddWithValue("@CYCLEREFERENCE", aMachineDataBelimed.CycleReference);
+
+                using (MySqlDataReader reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        mdNDXString = reader["MDNDX"].ToString();
+                    }
+                }
+            }
+            if (string.IsNullOrEmpty(mdNDXString)) { return false; }
+            if (!long.TryParse(mdNDXString, out aMDNDX)) { return false; }
+            return aMDNDX > 0;
         }
     }
 }
