@@ -80,7 +80,7 @@ namespace ConsoleAppBelimed
                     }
                     foreach (JuMachineSensor machineSensor in machineDataBelimed.MachineSensors)
                     {
-                        if (!DBMariaDB.Insert(machineSensor, connection, Schema))
+                        if (!DBMariaDB.Insert(machineSensor, mdNDX, connection, Schema))
                         {
                             Console.WriteLine(e.Name + ": MachineSensor " + machineSensor.SensorID + " could not be written to database");
                             return;
