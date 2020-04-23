@@ -53,29 +53,29 @@ namespace ConsoleAppBelimed
         {
             Console.WriteLine("New file detected: " + e.Name);
             MySqlConnection connection = null;
+            JuMachineDataBelimed machineDataBelimed = new JuMachineDataBelimed(-1);
+            if (machineDataBelimed.LoadFromFile(e.FullPath))
+            {
+                Console.WriteLine(e.Name + " was parsed.");
+            }
+            else
+            {
+                Console.WriteLine(e.Name + " could not be parsed.");
+                return;
+            }
             try
             {
                 connection = DBMariaDB.GetConnection(Database, Server, UserID, Password);
                 if (connection != null)
                 {
-                    if (!DBMariaDB.GetMDNDX(connection, Schema, out long mdNDX))
-                    {
-                        Console.WriteLine(e.Name + ": could not get a valid MDNDX");
-                        return;
-                    }
-                    JuMachineDataBelimed machineDataBelimed = new JuMachineDataBelimed(mdNDX);
-                    if (machineDataBelimed.LoadFromFile(e.FullPath))
-                    {
-                        Console.WriteLine(e.Name + " was parsed.");
-                    }
-                    else
-                    {
-                        Console.WriteLine(e.Name + " could not be parsed.");
-                        return;
-                    }
                     if (!DBMariaDB.Insert(machineDataBelimed, connection, Schema))
                     {
                         Console.WriteLine(e.Name + ": MachineData could not be written to database");
+                        return;
+                    }
+                    if (!DBMariaDB.Select(machineDataBelimed, connection, Schema, out long mdNDX))
+                    {
+                        Console.WriteLine(e.Name + ": MachineData has not a valid MDNDX");
                         return;
                     }
                     foreach (JuMachineSensor machineSensor in machineDataBelimed.MachineSensors)
