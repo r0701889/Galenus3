@@ -199,7 +199,7 @@ namespace ConsoleAppBelimed.JULIETClasses
             }
         }
 
-        private string GetCFilePath(string aKFileFullPath)
+        static public string GetCFilePath(string aKFileFullPath)
         {
             if (string.IsNullOrEmpty(aKFileFullPath)) { return ""; }
 

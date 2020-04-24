@@ -4,6 +4,8 @@ using System.IO;
 using MySql.Data.MySqlClient;
 using ConsoleAppBelimed.JULIETClasses;
 using ConsoleAppBelimed.Toolbox;
+using System.Runtime.InteropServices;
+using System.Xml.Schema;
 
 namespace ConsoleAppBelimed
 
@@ -86,7 +88,14 @@ namespace ConsoleAppBelimed
                             return;
                         }
                     }
-                    // TODO: save MachineSensorValues to database, look at the foreach above as an example
+                    foreach (JuMachineSensorValue machineSensorValue in machineDataBelimed.MachineSensorValues)
+                    {
+                        if (!DBMariaDB.Insert(machineSensorValue, mdNDX, connection, Schema))
+                        {
+                            Console.WriteLine(e.Name + ": MachineSensor " + machineSensorValue.MDNDX + " could not be written to database");
+                            return;
+                        }
+                    }
                 }
                 else
                 {
@@ -104,7 +113,7 @@ namespace ConsoleAppBelimed
 
             if (ArchiveFile)
             {
-                if (!MoveFileToArchive(e.FullPath))
+                if (MoveFileToArchive(e.FullPath))
                 {
                     Console.WriteLine(e.Name + " was archived.");
                 }
@@ -115,11 +124,12 @@ namespace ConsoleAppBelimed
             }
         }
 
-        private static bool MoveFileToArchive(string aFileFullPath)
+        public static bool MoveFileToArchive(string aFileFullPath)
         {
             if (!File.Exists(aFileFullPath)) { return false; }
-
-            // TODO: write function
+            string acFileFullPath = JuMachineDataBelimed.GetCFilePath(aFileFullPath);
+            if (!MoveFile(aFileFullPath)) { return false; }
+            if (!MoveFile(acFileFullPath)) { return false; }
             return true;
         }
 
@@ -153,6 +163,35 @@ namespace ConsoleAppBelimed
             }
             return false;
         }
+        static private bool MoveFile(string aFileFullPath)
+        {
+            string FilePath = aFileFullPath;
+            int Length = SourceFolder.Length;
+            string Ksubstring = FilePath.Substring(Length + 1);
+            string destFile = System.IO.Path.Combine(ArchiveFolder, Ksubstring);
+            //string cFileFullPath = GetCFilePath(aFileFullPath);
+            if (System.IO.Directory.Exists(SourceFolder))
+            {
+                System.IO.File.Copy(FilePath, destFile, true);
+            }
+            else
+            {
+                Console.WriteLine("Source path does not exist!");
+                return false;
+            }
+            try
+            {
+                System.IO.File.Delete(@FilePath);
+            }
+            catch (System.IO.IOException e)
+            {
+                Console.WriteLine(e.Message);
+                return false;
+            }
+            return true;
+        }
+
+
 
         /*
 

@@ -94,7 +94,7 @@ namespace ConsoleAppBelimed.Toolbox
             return rowCount == 1;
         }
 
-        public static bool Insert(JuMachineSensorValue aMachineSensorValue, MySqlConnection aConnection, string aSchema)
+        public static bool Insert(JuMachineSensorValue aMachineSensorValue, long mdNDX, MySqlConnection aConnection, string aSchema)
         {
             string sql = string.Format("INSERT INTO {0}.ORIS_MACHINESENSORVALUE (MDNDX, DTARGUMENT, STAGE, PHASE, MESSAGEREFERENCE, " +
                 "MESSAGE, SENSOR1, SENSOR2, SENSOR3, SENSOR4, SENSOR5, SENSOR6, ZONEREFERENCE, DTCREATED) " +
