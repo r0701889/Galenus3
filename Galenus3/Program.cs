@@ -6,6 +6,8 @@ using ConsoleAppBelimed.JULIETClasses;
 using ConsoleAppBelimed.Toolbox;
 using System.Runtime.InteropServices;
 using System.Xml.Schema;
+using System.Linq;
+using System.Security.Cryptography;
 
 namespace ConsoleAppBelimed
 
@@ -165,12 +167,18 @@ namespace ConsoleAppBelimed
         }
         static private bool MoveFile(string aFileFullPath)
         {
+            
             string FilePath = aFileFullPath;
             int Length = SourceFolder.Length;
             string Ksubstring = FilePath.Substring(Length + 1);
             string destFile = System.IO.Path.Combine(ArchiveFolder, Ksubstring);
-            //string cFileFullPath = GetCFilePath(aFileFullPath);
-            if (System.IO.Directory.Exists(SourceFolder))
+            //coppy the map structure
+            string stringCutted = destFile.Split('\\').Last();
+            int LengthFile = stringCutted.Length;
+            string destfile2 = destFile.Remove(destFile.Length - LengthFile);
+            System.IO.Directory.CreateDirectory(destfile2);
+            //stop coppy the map sturcture
+            if (System.IO.Directory.Exists(SourceFolder)) 
             {
                 System.IO.File.Copy(FilePath, destFile, true);
             }
